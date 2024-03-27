@@ -41,13 +41,7 @@ namespace Test
         }
         public class ProductIdNotFoundExceptionTest
         {
-            [SetUp]
-            public void Setup()
-            {
-            }
 
-
-            [Test]
 
             [TestCase(43, ExpectedResult = 0)]
             [TestCase(45, ExpectedResult = 0)]
@@ -60,6 +54,39 @@ namespace Test
                 bool Pnotfound = orderProcessorRepository.ProductNotExist(ProductId);
                 return Pnotfound ? 1 : 0;
             }
+        }
+
+        [Test]
+        public void ProductInOrder()
+        {
+
+            OrderProcessorService orderProcessorService = new OrderProcessorService();
+
+            Customer customer = new Customer()
+            {
+                CustomerId = 1,
+            };
+
+            Products product = new Products()
+            {
+                ProductId = 2,
+            };
+
+            Order_items orderItem = new Order_items()
+            {
+                Quantity = 3,
+            };
+            Order order = new Order()
+            {
+                ShippingAddress = "avadi",
+            };
+
+
+
+            bool ProductedAdded = orderProcessorService.Placeorderservice(customer, order, order_items, products);
+
+
+            Assert.That(true, Is.EqualTo(ProductedAdded));
         }
     }
 }

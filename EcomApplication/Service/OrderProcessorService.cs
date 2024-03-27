@@ -104,11 +104,11 @@ namespace EcomApplication.Service
             try
             {
                 CustomerNotFoundException.CustomerNotFound(customer.CustomerId);
-                List<Cart> cartList = orderProcessor.GetAllFromCart(customer);
+                List<Products> cartList = orderProcessor.GetAllFromCart(customer);
                 Console.WriteLine("productid\tproductid\tstockquantity");
-                foreach (Cart cart in cartList)
+                foreach (Products cart in cartList)
                 {
-                    Console.WriteLine(cart.CartId + "\t" + cart.CustomerId + "\t\t" + cart.ProductId + "\t\t" + cart.Quantity);
+                    Console.WriteLine(cart.ProductId + "\t" + cart.ProductId + "\t\t" + cart.StockQuantity);
                 }
 
             }
@@ -135,7 +135,7 @@ namespace EcomApplication.Service
             try
             {
                 CustomerNotFoundException.CustomerNotFound(customerId);
-                List<Order_items> pairs = orderProcessor.GetOrdersByCustomer(customerId);
+                List<Dictionary<Products, int>> pairs = orderProcessor.GetOrdersByCustomer(customerId);
                 Console.WriteLine("oredrItemid\tproductid\tquantity");
             }
             catch (Exception ex)

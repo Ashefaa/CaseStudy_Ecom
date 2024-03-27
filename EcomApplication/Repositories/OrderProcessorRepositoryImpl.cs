@@ -12,12 +12,12 @@ namespace EcomApplication.Repositories
 {
     public class OrderProcessorRepositoryImpl:IOrderProcessorRepository
     {
-        SqlConnection connect = null;
+        SqlConnection sqlConnection = null;
         SqlCommand cmd = null;
 
         public OrderProcessorRepositoryImpl()
         {
-            connect = new SqlConnection(DBConnection.GetConnectionString());
+            sqlConnection = new SqlConnection(DBConnection.GetConnectionString());
             cmd = new SqlCommand();
         }
 
@@ -34,50 +34,50 @@ namespace EcomApplication.Repositories
             cmd.Parameters.AddWithValue("@Price", product.Price);
             cmd.Parameters.AddWithValue("@Description", product.Description);
             cmd.Parameters.AddWithValue("Quantity", product.StockQuantity);
-            connect.Open();
-            cmd.Connection = connect;
+            sqlConnection.Open();
+            cmd.Connection = sqlConnection;
             cmd.ExecuteNonQuery();
             cmd.Parameters.Clear();
-            connect.Close();
+            sqlConnection.Close();
             return true;
         }
         public bool CreateCustomer(Customer customer)
         {
             cmd.CommandText = "Insert into Customers values(@Name,@Email,@Password)";
-            cmd.Parameters.Clear();
+            //cmd.Parameters.Clear();
             cmd.Parameters.AddWithValue("@Name", customer.Name);
             cmd.Parameters.AddWithValue("@Email", customer.Email);
             cmd.Parameters.AddWithValue("@Password", customer.Password);
-            connect.Open();
-            cmd.Connection = connect;
+            sqlConnection.Open();
+            cmd.Connection = sqlConnection;
             cmd.ExecuteNonQuery();
-            cmd.Parameters.Clear();
-            connect.Close();
+            //cmd.Parameters.Clear();
+            sqlConnection.Close();
             return true;
         }
         public bool DeleteProduct(int productId)
         {
             cmd.CommandText = "Delete from Product where product_id=@ProductId";
              cmd.Parameters.AddWithValue("@ProductId", productId);
-            connect.Open();
-            cmd.Connection = connect;
+            sqlConnection.Open();
+            cmd.Connection = sqlConnection;
             cmd.ExecuteNonQuery();
             //cmd.Parameters.Clear();
-            connect.Close();
+            sqlConnection.Close();
             return true;
 
         }
 
         public bool DeleteCustomer(int customerId)
         {
-            cmd.Connection = connect;
+            cmd.Connection = sqlConnection;
             cmd.CommandText = "Delete from Customers where customer_id=@CustomerId";
             // cmd.Parameters.Clear();
             cmd.Parameters.AddWithValue("@CustomerId", customerId);
-            connect.Open();
-            cmd.Connection = connect;
+            sqlConnection.Open();
+            cmd.Connection = sqlConnection;
             cmd.ExecuteNonQuery();
-            connect.Close();
+            sqlConnection.Close();
             return true;
         }
         public bool AddToCart(Customer customer, Products products, int quantity)
@@ -87,11 +87,11 @@ namespace EcomApplication.Repositories
             cmd.Parameters.AddWithValue("@CustomerId", customer.CustomerId);
             cmd.Parameters.AddWithValue("@ProductId", products.ProductId);
             cmd.Parameters.AddWithValue("@Quantity", quantity);
-            connect.Open();
-            cmd.Connection = connect;
+            sqlConnection.Open();
+            cmd.Connection = sqlConnection;
             cmd.ExecuteNonQuery();
             cmd.Parameters.Clear();
-            connect.Close();
+            sqlConnection.Close();
             return true;
         }
         public bool RemoveFromCart(Customer customer, Products products)
@@ -100,33 +100,33 @@ namespace EcomApplication.Repositories
             cmd.Parameters.Clear();
             cmd.Parameters.AddWithValue("@CustomerId", customer.CustomerId);
             cmd.Parameters.AddWithValue("@ProductId", products.ProductId);
-            connect.Open();
-            cmd.Connection = connect;
+            sqlConnection.Open();
+            cmd.Connection = sqlConnection;
             cmd.ExecuteNonQuery();
-            connect.Close();
+            sqlConnection.Close();
             return true;
         }
-        public List<Cart> GetAllFromCart(Customer customer)
+        public List<Products> GetAllFromCart(Customer customer)
         {
-            List<Cart> cartList = new List<Cart>();
-            cmd.CommandText = "Select * from cart where customer_id=@CustomerId";
+            List<Products> products = new List<Products>();
+            cmd.CommandText = "Select p.product_id,p.name,p.price,p.description,p.stockQuantity From Products p Join Cart c ON p.product_id=c.product_id Where c.customer_id=@CustomerId";
             cmd.Parameters.Clear();
             cmd.Parameters.AddWithValue("@CustomerId", customer.CustomerId);
-            connect.Open();
+            sqlConnection.Open();
             SqlDataReader reader = cmd.ExecuteReader();
             while (reader.Read())
             {
-                Cart cart = new Cart();
+                Products product = new Products();
 
-                cart.CartId = (int)reader["cart_id"];
-                cart.CustomerId = Convert.IsDBNull(reader["customer_id"]) ? null : (int)reader["customer_id"];
-                cart.ProductId = Convert.IsDBNull(reader["product_id"]) ? null : (int)reader["product_id"];
-                cart.Quantity = Convert.IsDBNull(reader["quantity"]) ? null : (int)reader["quantity"];
+                product.ProductId = (int)reader["product_id"];
+                product.ProductName = (string)reader["name"];
+                product.Price = Convert.ToDouble(reader["price"]);
+                product.StockQuantity = Convert.ToInt32(reader["quantity"]);
 
-                cartList.Add(cart);
+                products.Add(product);
             }
-            connect.Close();
-            return cartList;
+            sqlConnection.Close();
+            return products;
         }
         public bool PlaceOrder(Customer customer, List<Dictionary<Products, int>> productsAndQuantities, string shippingAddress)
         {
@@ -176,30 +176,28 @@ namespace EcomApplication.Repositories
                 return false;
             }
         }
-        public List<Order_items> GetOrdersByCustomer(int customerId)
+        public List<Dictionary<Products, int>> GetOrdersByCustomer(int customerId)
         {
-            List<Order_items> orders = new List<Order_items>();
-            SqlCommand cmd = new SqlCommand();
-            cmd.Connection = connect;
+            List<Dictionary<Products, int>> orders = new List<Dictionary<Products, int>>();
             cmd.CommandText = "Select oi.order_id,oi.product_id,oi.quantity From order_items oi join Products p on oi.product_id=p.product_id join orders o on oi.order_id=o.order_id where o.customer_id=@CustomerId";
             cmd.Parameters.AddWithValue("@CustomerId", customerId);
-            connect.Open();
+            sqlConnection.Open();
             SqlDataReader reader = cmd.ExecuteReader();
             while (reader.Read())
             {
-                Order_items order_Items = new Order_items();
+                Products products = new Products
                 {
-                    order_Items.OrderItemId = (int)reader["product_id"];
-                    order_Items.ProductId = (int)reader["productId"];
-                    order_Items.Quantity = (int)reader["quantity"];
-                    //price = Convert.ToDecimal(reader["price"])
+                    ProductId = (int)reader["product_id"],
+                    ProductName = (string)reader["name"],
+                    price = Convert.ToDouble(reader["price"])
                 };
                 int StockQuantity = Convert.ToInt32(reader["quantity"]);
-               
-                orders.Add(order_Items);
+                Dictionary<Products, int> orderItem = new Dictionary<Products, int>();
+                orderItem.Add(products, StockQuantity);
 
             }
             return orders;
+           
         }
         public bool CustomerNotPresent(int customerId)
         {
@@ -207,14 +205,14 @@ namespace EcomApplication.Repositories
             cmd.CommandText = "Select count(*)as total from Customers where customer_id=@CustomerId";
             cmd.Parameters.Clear();
             cmd.Parameters.AddWithValue("@CustomerId", customerId);
-            connect.Open();
+            sqlConnection.Open();
             SqlDataReader reader = cmd.ExecuteReader();
             while (reader.Read())
             {
                 noofcustomer = (int)(reader["total"]);
 
             }
-            connect.Close();
+            sqlConnection.Close();
             if (noofcustomer > 0)
             {
                 return true;
@@ -227,14 +225,14 @@ namespace EcomApplication.Repositories
             cmd.CommandText = "select count(*) as total from products where product_id=@ProductId";
             cmd.Parameters.Clear();
             cmd.Parameters.AddWithValue("@ProductId", productId);
-            connect.Open();
+            sqlConnection.Open();
             SqlDataReader reader = cmd.ExecuteReader();
             while (reader.Read())
             {
                 noOfProduct = (int)(reader["total"]);
 
             }
-            connect.Close();
+            sqlConnection.Close();
             if (noOfProduct > 0)
             {
                 return true;
@@ -247,14 +245,14 @@ namespace EcomApplication.Repositories
             cmd.CommandText = "select count(*) as total from products where order_id=@OrderId";
             cmd.Parameters.Clear();
             cmd.Parameters.AddWithValue("@OrderId", orderId);
-            connect.Open();
+            sqlConnection.Open();
             SqlDataReader reader = cmd.ExecuteReader();
             while (reader.Read())
             {
                 noOfOrder = (int)(reader["total"]);
 
             }
-            connect.Close();
+            sqlConnection.Close();
             if (noOfOrder > 0)
             {
                 return true;

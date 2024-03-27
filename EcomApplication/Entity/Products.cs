@@ -11,7 +11,7 @@ namespace EcomApplication.Entity
 
         public int productId;
         public string productname;
-        public int? price;
+        public double price;
         public string description;
         public int? stockQuantity;
 
@@ -34,7 +34,7 @@ namespace EcomApplication.Entity
             get { return productname; }
             set { productname = value; }
         }
-        public int? Price
+        public double Price
         {
             get { return price; }
             set { price = value; }
